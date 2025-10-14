@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Notifikasi Bibit Terrealisasi</title>
+<style>
+  :root {
+    --brand: #ffd84d;
+    --line: #e5e7eb;
+    --muted: #6b7280;
+    --text: #111827;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    background: #ffffff;
+    color: var(--text);
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding-bottom: 2rem;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  header h1 {
+    font-size: 1.25rem;
+    margin: 0;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .tab {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--brand);
+    border-radius: 999px;
+    background: var(--brand);
+    font-weight: 600;
+  }
+
+  .notif {
+    border-bottom: 1px solid var(--line);
+    padding: 1rem 1.2rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .notif:hover {
+    background: #fffbe6;
+  }
+
+  .notif p {
+    margin: 0.25rem 0;
+    line-height: 1.5;
+  }
+
+  .notif .time {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    background: #f3f4f6;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+
+  .footer {
+    text-align: right;
+    padding: 1rem 1.2rem;
+  }
+
+  .btn {
+    background: var(--brand);
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Notifikasi Bibit</h1>
+  </header>
+
+  <div class="tabs">
+    <div class="tab">Semua</div>
+  </div>
+
+  <div id="notif-list"></div>
+
+  <div class="footer">
+    <button class="btn" onclick="loadData()">Muat Ulang</button>
+  </div>
+</div>
+
+<script>
+const url = 'https://api.sheety.co/ecf70bd684db7a654a0aa41957dff1a8/nursery/bibit';
+const listEl = document.getElementById('notif-list');
+
+// Ambil data dari Sheety
+async function loadData() {
+  listEl.innerHTML = "<p style='padding:1rem; color:#6b7280;'>Memuat data...</p>";
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    renderList(json.bibit); // ✅ pakai bibit, bukan bibits
+  } catch (err) {
+    listEl.innerHTML = "<p style='padding:1rem; color:red;'>Gagal memuat data.</p>";
+    console.error(err);
+  }
+}
+
+// Tampilkan daftar notifikasi
+function renderList(data) {
+  listEl.innerHTML = '';
+  if (!data || data.length === 0) {
+    listEl.innerHTML = "<p style='padding:1rem; color:#6b7280;'>Tidak ada notifikasi.</p>";
+    return;
+  }
+
+  // Urutkan terbaru di atas
+  data.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+  data.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'notif';
+    div.innerHTML = `
+      <p>${buatKalimat(item)} <span class="badge">${item.bibit || '-'}</span></p>
+      <p class="time">${item.tanggal || '-'} • ${item.statusKirim || ''}</p>
+    `;
+    listEl.appendChild(div);
+  });
+}
+
+// Buat kalimat notifikasi
+function buatKalimat(item) {
+  const masuk = parseInt(item.masuk || 0);
+  const keluar = parseInt(item.keluar || 0);
+
+  if (keluar > 0) {
+    return `Realisasi keluar bibit ${item.bibit} sebanyak ${keluar} dari ${item.sumber || '-'} ke ${item.tujuanBibit || '-'} telah terrealisasi.`;
+  } else if (masuk > 0) {
+    return `Realisasi masuk bibit ${item.bibit} sebanyak ${masuk} ke ${item.tujuanBibit || '-'} telah terrealisasi.`;
+  } else {
+    return `Transaksi bibit ${item.bibit} telah terrealisasi.`;
+  }
+}
+
+// Jalankan saat halaman dibuka
+loadData();
+</script>
+</body>
+</html>
